@@ -3,7 +3,7 @@ package domain
 
 // Money is an amount in minor units with its currency.
 type Money struct {
-	Amount   int64  `json:"amount"` // minor units (paise, cents)
+	Amount   int64  `json:"amt"` // minor units (paise, cents)
 	Currency string `json:"currency"`
 }
 
