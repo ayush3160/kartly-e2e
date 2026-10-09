@@ -137,6 +137,7 @@ func (o *Orders) ListOrders(ctx context.Context, f ListFilter) ([]domain.Order, 
 		        to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
 		 FROM orders
 		 WHERE tenant_id = $1 AND ($2 = '' OR customer_id = $2) AND ($3 = '' OR status = $3)
+		   AND status <> 'payment_failed' 
 		 ORDER BY created_at DESC, id DESC LIMIT $4 OFFSET $5`,
 		f.Tenant, f.CustomerID, f.Status, f.Limit, f.Offset)
 	if err != nil {
