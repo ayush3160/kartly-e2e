@@ -35,6 +35,9 @@ type RateRequest struct {
 	FromPincode string `json:"fromPincode"`
 	ToPincode   string `json:"toPincode"`
 	WeightGrams int    `json:"weightGrams"`
+	// ServiceLevel is "standard", or "express" where express delivery is
+	// rolled out (KART-433).
+	ServiceLevel string `json:"serviceLevel"`
 }
 
 // Rate is one shipping option.

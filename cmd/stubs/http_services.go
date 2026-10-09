@@ -233,9 +233,10 @@ func shippingMux() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /v2/rates", func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
-			FromPincode string `json:"fromPincode"`
-			ToPincode   string `json:"toPincode"`
-			WeightGrams int    `json:"weightGrams"`
+			FromPincode  string `json:"fromPincode"`
+			ToPincode    string `json:"toPincode"`
+			WeightGrams  int    `json:"weightGrams"`
+			ServiceLevel string `json:"serviceLevel"`
 		}
 		dec := json.NewDecoder(r.Body)
 		dec.DisallowUnknownFields()

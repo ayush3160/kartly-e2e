@@ -76,7 +76,11 @@ func (s *Server) quote(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, r, err)
 		return
 	}
-	rates, err := s.Shipping.Rates(ctx, clients.RateRequest{FromPincode: s.WarehousePIN, ToPincode: req.Pincode, WeightGrams: 500 * len(c.Items)})
+	level := "standard"
+	if on, err := s.Flags.Enabled(ctx, "express-shipping", p.Tenant); err == nil && on {
+		level = "express"
+	}
+	rates, err := s.Shipping.Rates(ctx, clients.RateRequest{FromPincode: s.WarehousePIN, ToPincode: req.Pincode, WeightGrams: 500 * len(c.Items), ServiceLevel: level})
 	if err != nil {
 		s.fail(w, r, err)
 		return
