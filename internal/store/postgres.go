@@ -155,15 +155,45 @@ func (o *Orders) ListOrders(ctx context.Context, f ListFilter) ([]domain.Order, 
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	for i := range out {
-		if out[i].Items, err = o.items(ctx, out[i].ID, out[i].Total.Currency); err != nil {
-			return nil, err
-		}
+	if err := o.fillItems(ctx, out); err != nil {
+		return nil, err
 	}
 	if out == nil {
 		out = []domain.Order{}
 	}
 	return out, nil
+}
+
+// fillItems loads the items of every order on a page in one query, instead
+// of one query per order (KART-415).
+func (o *Orders) fillItems(ctx context.Context, orders []domain.Order) error {
+	if len(orders) == 0 {
+		return nil
+	}
+	ids := make([]string, len(orders))
+	byID := make(map[string]*domain.Order, len(orders))
+	for i := range orders {
+		ids[i] = orders[i].ID
+		orders[i].Items = []domain.OrderItem{}
+		byID[orders[i].ID] = &orders[i]
+	}
+	rows, err := o.db.Query(ctx,
+		`SELECT order_id, sku, name, quantity, unit_amount FROM order_items WHERE order_id = ANY($1) ORDER BY order_id, sku`, ids)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var orderID string
+		var it domain.OrderItem
+		if err := rows.Scan(&orderID, &it.SKU, &it.Name, &it.Quantity, &it.UnitPrice.Amount); err != nil {
+			return err
+		}
+		ord := byID[orderID]
+		it.UnitPrice.Currency = ord.Total.Currency
+		ord.Items = append(ord.Items, it)
+	}
+	return rows.Err()
 }
 
 // SetStatus moves an order to a new status when it is in one of from.
