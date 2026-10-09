@@ -41,7 +41,14 @@ func (s *Server) priceCart(ctx context.Context, p clients.Principal, c domain.Ca
 		if !cp.Active {
 			return domain.Quote{}, errCoupon{"coupon_expired", "coupon " + code + " has expired"}
 		}
-		req.Coupon = &clients.CouponRef{Code: cp.Code, Kind: cp.Kind, Value: cp.Value}
+		// Fixed coupons are stored in rupees in the admin UI; pricing-svc
+		// works in paise, so convert before sending (fixes off-by-100
+		// discounts reported in KART-417).
+		value := cp.Value
+		if cp.Kind == "fixed" {
+			value = cp.Value * 100
+		}
+		req.Coupon = &clients.CouponRef{Code: cp.Code, Kind: cp.Kind, Value: value}
 	}
 	return s.Pricing.Quote(ctx, req)
 }
