@@ -101,7 +101,7 @@ func (s *Server) cancelOrder(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, r, err)
 		return
 	}
-	if err := s.Events.Publish(ctx, "order-events", id, map[string]any{"type": "order.cancelled", "orderId": id, "refund": refundStatus}); err != nil {
+	if err := s.Events.Publish(ctx, orderEventsTopic, id, map[string]any{"type": "order.cancelled", "orderId": id, "refund": refundStatus}); err != nil {
 		s.fail(w, r, err)
 		return
 	}

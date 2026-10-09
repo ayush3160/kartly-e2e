@@ -68,7 +68,7 @@ func (s *Server) adminUpdateOrder(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	if err := s.Events.Publish(ctx, "order-events", id, map[string]any{"type": "order." + req.Status, "orderId": id, "by": p.UserID}); err != nil {
+	if err := s.Events.Publish(ctx, orderEventsTopic, id, map[string]any{"type": "order." + req.Status, "orderId": id, "by": p.UserID}); err != nil {
 		s.fail(w, r, err)
 		return
 	}

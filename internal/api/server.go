@@ -15,6 +15,11 @@ import (
 	"github.com/ayush3160/kartly-e2e/internal/store"
 )
 
+// orderEventsTopic carries order lifecycle events. v2 is keyed by order id
+// with a schema version on every event (KART-408); v1 consumers were moved
+// before this release.
+const orderEventsTopic = "order-events-v2"
+
 // Server wires the handlers to their dependencies.
 type Server struct {
 	Orders   *store.Orders

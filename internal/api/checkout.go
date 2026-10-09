@@ -208,7 +208,7 @@ func (s *Server) checkout(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, r, err)
 		return
 	}
-	if err := s.Events.Publish(ctx, "order-events", id, map[string]any{
+	if err := s.Events.Publish(ctx, orderEventsTopic, id, map[string]any{
 		"type": "order.paid", "orderId": id, "customerId": p.UserID, "total": q.Total, "items": len(ord.Items),
 	}); err != nil {
 		s.fail(w, r, err)

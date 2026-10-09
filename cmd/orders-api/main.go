@@ -65,7 +65,7 @@ func run(log *slog.Logger) error {
 		return err
 	}
 	if err := waitFor(ctx, log, "kafka", func(ctx context.Context) error {
-		return store.EnsureTopics(ctx, cfg.KafkaBroker, "order-events", "email-requests")
+		return store.EnsureTopics(ctx, cfg.KafkaBroker, "order-events-v2", "email-requests")
 	}); err != nil {
 		return err
 	}

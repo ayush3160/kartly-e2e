@@ -85,7 +85,7 @@ func (s *Server) createReturn(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, r, err)
 		return
 	}
-	if err := s.Events.Publish(ctx, "order-events", ord.ID, map[string]any{"type": "order.return_requested", "orderId": ord.ID, "returnId": retID, "refund": refund}); err != nil {
+	if err := s.Events.Publish(ctx, orderEventsTopic, ord.ID, map[string]any{"type": "order.return_requested", "orderId": ord.ID, "returnId": retID, "refund": refund}); err != nil {
 		s.fail(w, r, err)
 		return
 	}

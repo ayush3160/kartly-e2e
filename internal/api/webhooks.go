@@ -70,7 +70,7 @@ func (s *Server) webhook(w http.ResponseWriter, r *http.Request, provider, signa
 		return
 	}
 	if moved {
-		if err := s.Events.Publish(ctx, "order-events", ev.OrderID, map[string]any{"type": "order." + t.to, "orderId": ev.OrderID, "source": provider}); err != nil {
+		if err := s.Events.Publish(ctx, orderEventsTopic, ev.OrderID, map[string]any{"type": "order." + t.to, "orderId": ev.OrderID, "source": provider}); err != nil {
 			s.fail(w, r, err)
 			return
 		}
