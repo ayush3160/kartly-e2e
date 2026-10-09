@@ -16,6 +16,7 @@ import (
 
 type checkoutReq struct {
 	Coupon    string `json:"coupon,omitempty"`
+	GiftWrap  bool   `json:"giftWrap,omitempty"`
 	CardToken string `json:"cardToken"`
 	AddressID int64  `json:"addressId"`
 }
@@ -26,9 +27,10 @@ type errCoupon struct{ code, msg string }
 func (e errCoupon) Error() string { return e.msg }
 
 // priceCart validates the coupon and asks pricing-svc for the totals.
-func (s *Server) priceCart(ctx context.Context, p clients.Principal, c domain.Cart, code string) (domain.Quote, error) {
+func (s *Server) priceCart(ctx context.Context, p clients.Principal, c domain.Cart, code string, giftWrap bool) (domain.Quote, error) {
 	req := clients.QuoteRequest{
 		CartID: c.ID, Customer: p.UserID, Region: s.Region, Currency: c.Currency, Lines: quoteLines(c),
+		GiftWrap: giftWrap,
 	}
 	if code != "" {
 		cp, err := s.Orders.CouponByCode(ctx, code)
@@ -48,8 +50,9 @@ func (s *Server) priceCart(ctx context.Context, p clients.Principal, c domain.Ca
 
 func (s *Server) quote(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Coupon  string `json:"coupon,omitempty"`
-		Pincode string `json:"pincode"`
+		Coupon   string `json:"coupon,omitempty"`
+		Pincode  string `json:"pincode"`
+		GiftWrap bool   `json:"giftWrap,omitempty"`
 	}
 	if err := decode(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "bad_request", "body must be {coupon, pincode}")
@@ -66,7 +69,7 @@ func (s *Server) quote(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnprocessableEntity, "empty_cart", "add something to the cart first")
 		return
 	}
-	q, err := s.priceCart(ctx, p, c, req.Coupon)
+	q, err := s.priceCart(ctx, p, c, req.Coupon, req.GiftWrap)
 	var ce errCoupon
 	if errors.As(err, &ce) {
 		writeError(w, http.StatusUnprocessableEntity, ce.code, ce.msg)
@@ -135,7 +138,7 @@ func (s *Server) checkout(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnprocessableEntity, "empty_cart", "add something to the cart first")
 		return
 	}
-	q, err := s.priceCart(ctx, p, c, req.Coupon)
+	q, err := s.priceCart(ctx, p, c, req.Coupon, req.GiftWrap)
 	var ce errCoupon
 	if errors.As(err, &ce) {
 		_ = s.Cache.Del(ctx, "idem:checkout:"+p.UserID+":"+idem)

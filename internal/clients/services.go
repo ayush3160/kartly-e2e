@@ -63,6 +63,8 @@ type QuoteRequest struct {
 	Currency string      `json:"currency"`
 	Lines    []QuoteLine `json:"lines"`
 	Coupon   *CouponRef  `json:"coupon,omitempty"`
+	// GiftWrap asks pricing-svc to add the gift-wrap fee (KART-402).
+	GiftWrap bool `json:"giftWrap"`
 }
 
 // CouponRef is a validated coupon passed to pricing.

@@ -42,6 +42,8 @@ type Quote struct {
 	Tax      Money  `json:"tax"`
 	Total    Money  `json:"total"`
 	Coupon   string `json:"coupon,omitempty"`
+	// GiftWrapFee is charged when the customer asks for gift wrapping.
+	GiftWrapFee Money `json:"giftWrapFee"`
 }
 
 // OrderItem is one line of a placed order.

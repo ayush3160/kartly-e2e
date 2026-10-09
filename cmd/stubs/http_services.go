@@ -120,6 +120,7 @@ type quoteReq struct {
 	Region   string      `json:"region"`
 	Currency string      `json:"currency"`
 	Lines    []quoteLine `json:"lines"`
+	GiftWrap bool        `json:"giftWrap"`
 	Coupon   *struct {
 		Code  string `json:"code"`
 		Kind  string `json:"kind"`
@@ -163,11 +164,18 @@ func pricingMux() http.Handler {
 				ship = 0
 			}
 		}
-		tax := (sub - disc) * taxPct / 100
+		var wrap int64
+		if q.GiftWrap {
+			wrap = 4900
+			if q.Region == "US" {
+				wrap = 499
+			}
+		}
+		tax := (sub - disc + wrap) * taxPct / 100
 		m := func(a int64) money { return money{Amount: a, Currency: q.Currency} }
 		writeJSON(w, 200, map[string]any{
 			"subtotal": m(sub), "discount": m(disc), "shipping": m(ship), "tax": m(tax),
-			"total": m(sub - disc + ship + tax), "coupon": code,
+			"giftWrapFee": m(wrap), "total": m(sub - disc + ship + wrap + tax), "coupon": code,
 		})
 	})
 	return mux
