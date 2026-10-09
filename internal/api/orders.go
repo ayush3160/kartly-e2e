@@ -34,15 +34,16 @@ func (s *Server) getOrder(w http.ResponseWriter, r *http.Request) {
 	p := principal(r)
 	ctx := r.Context()
 	id := r.PathValue("id")
-	perms, err := s.Auth.Permissions(ctx, p.UserID, "order:"+id)
-	if err != nil {
-		s.fail(w, r, err)
-		return
-	}
 	ord, err := s.Orders.OrderByID(ctx, p.Tenant, id)
 	if err != nil {
 		s.fail(w, r, err)
 		return
+	}
+	// Staff roles come with the token; no need for a second round trip.
+	staff := p.Role == "support" || p.Role == "admin"
+	perms := struct{ Allowed []string }{}
+	if staff {
+		perms.Allowed = []string{"read", "read_notes"}
 	}
 	if ord.CustomerID != p.UserID && !slices.Contains(perms.Allowed, "read") {
 		writeError(w, http.StatusForbidden, "forbidden", "this order belongs to another customer")
