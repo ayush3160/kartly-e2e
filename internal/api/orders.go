@@ -105,5 +105,6 @@ func (s *Server) cancelOrder(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, r, err)
 		return
 	}
+	s.Log.Info("order cancelled", "order", id, "refund", refundStatus)
 	writeJSON(w, http.StatusOK, map[string]any{"orderId": id, "status": "cancelled", "refund": refundStatus})
 }

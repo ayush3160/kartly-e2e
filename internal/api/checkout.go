@@ -220,6 +220,7 @@ func (s *Server) checkout(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, r, err)
 		return
 	}
+	s.Log.Info("order placed", "order", id, "customer", p.UserID, "total", q.Total.Amount, "items", len(ord.Items))
 	if err := s.Docs.DeleteCart(ctx, c.ID); err != nil {
 		s.fail(w, r, err)
 		return
