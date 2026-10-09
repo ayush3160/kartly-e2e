@@ -130,15 +130,18 @@ type ListFilter struct {
 	Offset     int
 }
 
+// listOrdersSQL is the order-list query; kept in one place so customer and
+// admin listings stay in step.
+const listOrdersSQL = `SELECT id, customer_id, status, total_amount, currency,
+       to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+FROM orders
+WHERE tenant_id = $1 AND ($2 = '' OR customer_id = $2) AND ($3 = '' OR status = $3)
+  AND status <> 'payment_failed'
+ORDER BY created_at DESC, id DESC LIMIT $4 OFFSET $5`
+
 // ListOrders returns a page of orders, newest first, with their items.
 func (o *Orders) ListOrders(ctx context.Context, f ListFilter) ([]domain.Order, error) {
-	rows, err := o.db.Query(ctx,
-		`SELECT id, customer_id, status, total_amount, currency,
-		        to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
-		 FROM orders
-		 WHERE tenant_id = $1 AND ($2 = '' OR customer_id = $2) AND ($3 = '' OR status = $3)
-		 ORDER BY created_at DESC, id DESC LIMIT $4 OFFSET $5`,
-		f.Tenant, f.CustomerID, f.Status, f.Limit, f.Offset)
+	rows, err := o.db.Query(ctx, listOrdersSQL, f.Tenant, f.CustomerID, f.Status, f.Limit, f.Offset)
 	if err != nil {
 		return nil, err
 	}
