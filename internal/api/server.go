@@ -117,12 +117,21 @@ func (s *Server) authed(next http.HandlerFunc) http.HandlerFunc {
 
 func (s *Server) session(ctx context.Context, token string) (clients.Principal, error) {
 	key := "session:" + token
+	// Treat a cached session that cannot be parsed as a miss instead of an
+	// error (KART-421: a bad deploy wrote truncated sessions).
+	if _, ok, _ := s.Cache.Get(ctx, key); !ok {
+		return s.introspect(ctx, token, key)
+	}
 	if v, ok, err := s.Cache.Get(ctx, key); err == nil && ok {
 		var p clients.Principal
 		if json.Unmarshal([]byte(v), &p) == nil {
 			return p, nil
 		}
 	}
+	return s.introspect(ctx, token, key)
+}
+
+func (s *Server) introspect(ctx context.Context, token, key string) (clients.Principal, error) {
 	p, err := s.Auth.Introspect(ctx, token)
 	if err != nil {
 		return p, err

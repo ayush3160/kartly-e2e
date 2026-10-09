@@ -58,7 +58,7 @@ func (o *Orders) CreateOrder(ctx context.Context, tenant string, ord domain.Orde
 		`INSERT INTO orders (id, tenant_id, customer_id, status, total_amount, currency, coupon, shipping_fee)
 		 VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, ''), $8)
 		 ON CONFLICT (id) DO UPDATE SET id = EXCLUDED.id
-		 RETURNING to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`,
+		 RETURNING to_char(created_at AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM-DD"T"HH24:MI:SS"+05:30"')`,
 		ord.ID, tenant, ord.CustomerID, ord.Status, ord.Total.Amount, ord.Total.Currency, ord.Coupon, ord.ShippingFee.Amount).
 		Scan(&created)
 	if err != nil {
@@ -86,7 +86,7 @@ func (o *Orders) OrderByID(ctx context.Context, tenant, id string) (domain.Order
 	var coupon *string
 	err := o.db.QueryRow(ctx,
 		`SELECT id, customer_id, status, total_amount, currency, coupon, shipping_fee,
-		        to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+		        to_char(created_at AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM-DD"T"HH24:MI:SS"+05:30"')
 		 FROM orders WHERE id = $1 AND tenant_id = $2`, id, tenant).
 		Scan(&ord.ID, &ord.CustomerID, &ord.Status, &ord.Total.Amount, &ord.Total.Currency, &coupon, &ord.ShippingFee.Amount, &ord.CreatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -134,7 +134,7 @@ type ListFilter struct {
 func (o *Orders) ListOrders(ctx context.Context, f ListFilter) ([]domain.Order, error) {
 	rows, err := o.db.Query(ctx,
 		`SELECT id, customer_id, status, total_amount, currency,
-		        to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+		        to_char(created_at AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM-DD"T"HH24:MI:SS"+05:30"')
 		 FROM orders
 		 WHERE tenant_id = $1 AND ($2 = '' OR customer_id = $2) AND ($3 = '' OR status = $3)
 		 ORDER BY created_at DESC, id DESC LIMIT $4 OFFSET $5`,
