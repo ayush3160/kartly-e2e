@@ -48,15 +48,31 @@ func (s *Server) getOrder(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusForbidden, "forbidden", "this order belongs to another customer")
 		return
 	}
+	writeJSON(w, http.StatusOK, ord)
+}
+
+// getOrderNotes serves an order's support notes to staff allowed to read
+// them. Notes moved off the order detail so it no longer waits on Mongo
+// (KART-430).
+func (s *Server) getOrderNotes(w http.ResponseWriter, r *http.Request) {
+	p := principal(r)
+	ctx := r.Context()
+	id := r.PathValue("id")
+	perms, err := s.Auth.Permissions(ctx, p.UserID, "order:"+id)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	if !slices.Contains(perms.Allowed, "read_notes") {
+		writeError(w, http.StatusForbidden, "forbidden", "you may not read notes on this order")
+		return
+	}
 	notes, err := s.Docs.OrderNotes(ctx, id)
 	if err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	if len(notes) > 0 && slices.Contains(perms.Allowed, "read_notes") {
-		ord.Notes = notes
-	}
-	writeJSON(w, http.StatusOK, ord)
+	writeJSON(w, http.StatusOK, map[string]any{"orderId": id, "notes": notes})
 }
 
 func (s *Server) cancelOrder(w http.ResponseWriter, r *http.Request) {
