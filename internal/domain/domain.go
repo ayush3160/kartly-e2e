@@ -67,10 +67,10 @@ type Order struct {
 
 // Account is a customer profile from the legacy accounts database.
 type Account struct {
-	ID        string   `json:"id"`
-	Email     string   `json:"email"`
-	Name      string   `json:"name"`
-	Tier      string   `json:"tier"`
+	ID        string    `json:"id"`
+	Email     string    `json:"email"`
+	Name      string    `json:"name"`
+	Tier      string    `json:"tier"`
 	Addresses []Address `json:"addresses"`
 }
 
@@ -85,10 +85,10 @@ type Address struct {
 
 // Return is a return request for an order.
 type Return struct {
-	ID       string `json:"id"`
-	OrderID  string `json:"orderId"`
-	Status   string `json:"status"`
-	Refund   Money  `json:"refund"`
-	Label    string `json:"label,omitempty"`
-	Reason   string `json:"reason"`
+	ID      string `json:"id"`
+	OrderID string `json:"orderId"`
+	Status  string `json:"status"`
+	Refund  Money  `json:"refund"`
+	Label   string `json:"label,omitempty"`
+	Reason  string `json:"reason"`
 }

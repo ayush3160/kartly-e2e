@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ayush3160/kartly-e2e/internal/domain"
 	kartlyv1 "github.com/ayush3160/kartly-e2e/gen/kartlyv1"
+	"github.com/ayush3160/kartly-e2e/internal/domain"
 )
 
 const productTTL = 10 * time.Minute

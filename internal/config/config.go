@@ -17,11 +17,11 @@ type Config struct {
 	RedisAddr   string
 	KafkaBroker []string
 
-	CatalogURL  string
-	PricingURL  string
-	AuthURL     string
-	FlagsURL    string
-	ShippingURL string // HTTP/2 (h2c)
+	CatalogURL    string
+	PricingURL    string
+	AuthURL       string
+	FlagsURL      string
+	ShippingURL   string // HTTP/2 (h2c)
 	PaymentsGRPC  string
 	InventoryGRPC string
 
