@@ -12,6 +12,7 @@ import (
 	"github.com/ayush3160/kartly-e2e/internal/clients"
 	"github.com/ayush3160/kartly-e2e/internal/domain"
 	"github.com/ayush3160/kartly-e2e/internal/store"
+	"github.com/google/uuid"
 )
 
 type checkoutReq struct {
@@ -27,8 +28,10 @@ func (e errCoupon) Error() string { return e.msg }
 
 // priceCart validates the coupon and asks pricing-svc for the totals.
 func (s *Server) priceCart(ctx context.Context, p clients.Principal, c domain.Cart, code string) (domain.Quote, error) {
+	// pricing-svc keys its quote cache by cartId; send a fresh quote session
+	// id per request so a stale cached quote is never reused (KART-419).
 	req := clients.QuoteRequest{
-		CartID: c.ID, Customer: p.UserID, Region: s.Region, Currency: c.Currency, Lines: quoteLines(c),
+		CartID: c.ID + ":" + uuid.NewString(), Customer: p.UserID, Region: s.Region, Currency: c.Currency, Lines: quoteLines(c),
 	}
 	if code != "" {
 		cp, err := s.Orders.CouponByCode(ctx, code)
