@@ -3,8 +3,10 @@ package api
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"strings"
 
+	kartlyv1 "github.com/ayush3160/kartly-e2e/gen/kartlyv1"
 	"github.com/ayush3160/kartly-e2e/internal/clients"
 	"github.com/ayush3160/kartly-e2e/internal/domain"
 )
@@ -73,6 +75,18 @@ func (s *Server) addItem(w http.ResponseWriter, r *http.Request) {
 	}
 	if !p.InStock {
 		writeError(w, http.StatusConflict, "out_of_stock", p.Name+" is out of stock")
+		return
+	}
+	// The catalog's inStock flag lags the warehouse by up to an hour; ask
+	// inventory for live stock so customers cannot add more than we have
+	// (KART-388).
+	st, err := s.GRPC.Inventory.Get(r.Context(), &kartlyv1.GetStockRequest{Sku: p.SKU, Warehouse: "BLR-1"})
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	if int32(req.Quantity) > st.GetAvailable() {
+		writeError(w, http.StatusConflict, "insufficient_stock", "only "+strconv.Itoa(int(st.GetAvailable()))+" left")
 		return
 	}
 	c, err := s.Docs.Cart(r.Context(), cartID(r), s.currency())
