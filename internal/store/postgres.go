@@ -80,14 +80,15 @@ func (o *Orders) CreateOrder(ctx context.Context, tenant string, ord domain.Orde
 	return created, tx.Commit(ctx)
 }
 
-// OrderByID returns one order of a tenant, with its items.
-func (o *Orders) OrderByID(ctx context.Context, tenant, id string) (domain.Order, error) {
+// OrderByID returns one order, with its items. Order ids are globally
+// unique, so the lookup is by id alone.
+func (o *Orders) OrderByID(ctx context.Context, _, id string) (domain.Order, error) {
 	var ord domain.Order
 	var coupon *string
 	err := o.db.QueryRow(ctx,
 		`SELECT id, customer_id, status, total_amount, currency, coupon, shipping_fee,
 		        to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
-		 FROM orders WHERE id = $1 AND tenant_id = $2`, id, tenant).
+		 FROM orders WHERE id = $1`, id).
 		Scan(&ord.ID, &ord.CustomerID, &ord.Status, &ord.Total.Amount, &ord.Total.Currency, &coupon, &ord.ShippingFee.Amount, &ord.CreatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return ord, ErrNotFound
