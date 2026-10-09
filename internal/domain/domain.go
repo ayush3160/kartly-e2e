@@ -30,7 +30,7 @@ type CartItem struct {
 type Cart struct {
 	ID         string     `json:"id" bson:"_id"`
 	CustomerID string     `json:"customerId,omitempty" bson:"customerId,omitempty"`
-	Items      []CartItem `json:"items" bson:"items"`
+	Items      []CartItem `json:"items,omitempty" bson:"items"`
 	Currency   string     `json:"currency" bson:"currency"`
 }
 
@@ -57,7 +57,7 @@ type Order struct {
 	ID          string      `json:"id"`
 	CustomerID  string      `json:"customerId"`
 	Status      string      `json:"status"`
-	Items       []OrderItem `json:"items"`
+	Items       []OrderItem `json:"items,omitempty"`
 	Total       Money       `json:"total"`
 	Coupon      string      `json:"coupon,omitempty"`
 	ShippingFee Money       `json:"shippingFee"`
@@ -71,7 +71,7 @@ type Account struct {
 	Email     string    `json:"email"`
 	Name      string    `json:"name"`
 	Tier      string    `json:"tier"`
-	Addresses []Address `json:"addresses"`
+	Addresses []Address `json:"addresses,omitempty"`
 }
 
 // Address is a shipping address.

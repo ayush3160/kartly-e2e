@@ -39,9 +39,6 @@ func (s *Server) listProducts(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, r, err)
 		return
 	}
-	if res.Items == nil {
-		res.Items = []domain.Product{}
-	}
 	writeJSON(w, http.StatusOK, res)
 }
 
