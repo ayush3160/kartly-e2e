@@ -166,6 +166,14 @@ func (o *Orders) ListOrders(ctx context.Context, f ListFilter) ([]domain.Order, 
 	return out, nil
 }
 
+// PointsEarned is the loyalty points an order earned; 0 when none.
+func (o *Orders) PointsEarned(ctx context.Context, orderID string) (int64, error) {
+	var pts int64
+	err := o.db.QueryRow(ctx,
+		`SELECT COALESCE(SUM(points), 0) FROM loyalty_ledger WHERE order_id = $1`, orderID).Scan(&pts)
+	return pts, err
+}
+
 // SetStatus moves an order to a new status when it is in one of from.
 func (o *Orders) SetStatus(ctx context.Context, tenant, id, to string, from ...string) (bool, error) {
 	tag, err := o.db.Exec(ctx,

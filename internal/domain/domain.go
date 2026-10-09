@@ -63,6 +63,8 @@ type Order struct {
 	ShippingFee Money       `json:"shippingFee"`
 	CreatedAt   string      `json:"createdAt"`
 	Notes       []string    `json:"notes,omitempty"`
+	// PointsEarned is the loyalty points this order earned (KART-405).
+	PointsEarned int64 `json:"pointsEarned"`
 }
 
 // Account is a customer profile from the legacy accounts database.

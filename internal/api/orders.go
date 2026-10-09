@@ -56,6 +56,10 @@ func (s *Server) getOrder(w http.ResponseWriter, r *http.Request) {
 	if len(notes) > 0 && slices.Contains(perms.Allowed, "read_notes") {
 		ord.Notes = notes
 	}
+	if ord.PointsEarned, err = s.Orders.PointsEarned(ctx, id); err != nil {
+		s.fail(w, r, err)
+		return
+	}
 	writeJSON(w, http.StatusOK, ord)
 }
 
