@@ -3,10 +3,12 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
 	kartlyv1 "github.com/ayush3160/kartly-e2e/gen/kartlyv1"
+	"github.com/ayush3160/kartly-e2e/internal/clients"
 	"github.com/ayush3160/kartly-e2e/internal/domain"
 )
 
@@ -34,10 +36,21 @@ func (s *Server) listProducts(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	page := queryInt(r, "page", 1, 50)
 	size := queryInt(r, "size", 20, 50)
+	// Search pages are cached for five minutes: the storefront's category
+	// pages were most of catalog-svc's load (KART-410).
+	key := fmt.Sprintf("search:%s:%s:%s:%d:%d", s.Region, q.Get("q"), q.Get("category"), page, size)
+	var res clients.ProductPage
+	if v, ok, err := s.Cache.Get(r.Context(), key); err == nil && ok && json.Unmarshal([]byte(v), &res) == nil {
+		writeJSON(w, http.StatusOK, res)
+		return
+	}
 	res, err := s.Catalog.Search(r.Context(), q.Get("q"), q.Get("category"), s.Region, page, size)
 	if err != nil {
 		s.fail(w, r, err)
 		return
+	}
+	if b, err := json.Marshal(res); err == nil {
+		_ = s.Cache.Set(r.Context(), key, string(b), 5*time.Minute)
 	}
 	if res.Items == nil {
 		res.Items = []domain.Product{}
