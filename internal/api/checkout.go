@@ -167,10 +167,18 @@ func (s *Server) checkout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	auth, err := s.GRPC.Payments.Authorize(ctx, &kartlyv1.AuthorizeRequest{
-		OrderId: id, CustomerId: p.UserID, AmountCents: q.Total.Amount, Currency: q.Total.Currency,
-		CardToken: req.CardToken, IdempotencyKey: idem,
-	})
+	// The processor times out under load (KART-426); retry once. The
+	// idempotency key makes a retried authorization safe.
+	var auth *kartlyv1.AuthorizeResponse
+	for attempt := 0; attempt < 2; attempt++ {
+		auth, err = s.GRPC.Payments.Authorize(ctx, &kartlyv1.AuthorizeRequest{
+			OrderId: id, CustomerId: p.UserID, AmountCents: q.Total.Amount, Currency: q.Total.Currency,
+			CardToken: req.CardToken, IdempotencyKey: idem,
+		})
+		if err != nil {
+			continue
+		}
+	}
 	if err != nil {
 		s.fail(w, r, err)
 		return
