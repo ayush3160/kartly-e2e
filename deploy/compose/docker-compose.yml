@@ -1,0 +1,63 @@
+# Local run of orders-api with every dependency: docker compose up --build
+name: kartly
+x-stub: &stub
+  image: kartly/stubs:dev
+  pull_policy: never # built once, by the catalog service
+services:
+  postgres:
+    image: postgres:16
+    environment: { POSTGRES_USER: kartly, POSTGRES_PASSWORD: kartly, POSTGRES_DB: kartly }
+    volumes: ["../../db/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro"]
+    ports: ["5432:5432"]
+  mysql:
+    image: mysql:8.0
+    environment: { MYSQL_ROOT_PASSWORD: root, MYSQL_DATABASE: accounts, MYSQL_USER: kartly, MYSQL_PASSWORD: kartly }
+    volumes: ["../../db/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro"]
+    ports: ["3306:3306"]
+  mongo:
+    image: mongo:7
+    volumes: ["../../db/mongo/init.js:/docker-entrypoint-initdb.d/init.js:ro"]
+    ports: ["27017:27017"]
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+  kafka:
+    image: apache/kafka:3.8.0
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+  catalog:
+    <<: *stub
+    build: { context: ../.., target: stubs }
+    pull_policy: build
+    command: ["-svc", "catalog", "-addr", ":9101"]
+  pricing:   { <<: *stub, command: ["-svc", "pricing", "-addr", ":9102"] }
+  auth:      { <<: *stub, command: ["-svc", "auth", "-addr", ":9103"] }
+  flags:     { <<: *stub, command: ["-svc", "flags", "-addr", ":9104"] }
+  shipping:  { <<: *stub, command: ["-svc", "shipping", "-addr", ":9105"] }
+  payments:  { <<: *stub, command: ["-svc", "payments", "-addr", ":9201"] }
+  inventory: { <<: *stub, command: ["-svc", "inventory", "-addr", ":9202"] }
+  orders-api:
+    build: { context: ../.., target: orders-api }
+    image: kartly/orders-api:dev
+    ports: ["8080:8080"]
+    environment:
+      POSTGRES_DSN: postgres://kartly:kartly@postgres:5432/kartly?sslmode=disable
+      MYSQL_DSN: kartly:kartly@tcp(mysql:3306)/accounts?parseTime=true
+      MONGO_URI: mongodb://mongo:27017
+      REDIS_ADDR: redis:6379
+      KAFKA_BROKERS: kafka:9092
+      CATALOG_URL: http://catalog:9101
+      PRICING_URL: http://pricing:9102
+      AUTH_URL: http://auth:9103
+      FLAGS_URL: http://flags:9104
+      SHIPPING_URL: http://shipping:9105
+      PAYMENTS_GRPC: payments:9201
+      INVENTORY_GRPC: inventory:9202
+    depends_on: [postgres, mysql, mongo, redis, kafka, catalog, pricing, auth, flags, shipping, payments, inventory]

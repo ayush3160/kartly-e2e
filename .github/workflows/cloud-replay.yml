@@ -1,0 +1,49 @@
+# Replays the tests recorded on main against this pull request's code.
+#
+# Recording is never done here: main is recorded once, locally, with
+# `keploy k8s` (see README). Each PR builds its own orders-api image and runs
+# `keploy cloud replay --image` against it. When the replay fails, the job's
+# summary names the `keploy cloud triage` command to give your coding agent.
+name: keploy cloud replay
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: cloud-replay-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      KEPLOY_API_KEY: ${{ secrets.KEPLOY_API_KEY }}
+      APP: kartly.orders-api
+      CLUSTER: ${{ vars.KEPLOY_CLUSTER }}
+      IMAGE: kartly/orders-api:pr-${{ github.event.pull_request.number || github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # cloud replay compares the checkout with the base branch
+
+      - name: Build orders-api for this PR
+        run: docker build --target orders-api -t "$IMAGE" .
+
+      - name: Install the Keploy CLI
+        run: |
+          curl --silent -O -L https://keploy.io/ent/install.sh
+          source install.sh
+          keploy --version
+
+      - name: keploy cloud replay
+        shell: bash # -eo pipefail: the replay's exit code survives tee
+        run: keploy cloud replay --app "$APP" --cluster "$CLUSTER" --image "$IMAGE" 2>&1 | tee replay.log
+
+      - name: Upload the replay log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: replay-log
+          path: replay.log

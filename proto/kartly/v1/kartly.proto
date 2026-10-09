@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package kartly.v1;
+
+option go_package = "github.com/ayush3160/kartly-e2e/gen/kartlyv1";
+
+// Payments is the card processor's gRPC API.
+service Payments {
+  rpc Authorize(AuthorizeRequest) returns (AuthorizeResponse);
+  rpc Capture(CaptureRequest) returns (CaptureResponse);
+  rpc Refund(RefundRequest) returns (RefundResponse);
+}
+
+message AuthorizeRequest {
+  string order_id = 1;
+  string customer_id = 2;
+  int64 amount_cents = 3;
+  string currency = 4;
+  string card_token = 5;
+  string idempotency_key = 6;
+}
+
+message AuthorizeResponse {
+  string authorization_id = 1;
+  string status = 2; // approved | declined | requires_action
+  string decline_code = 3;
+}
+
+message CaptureRequest {
+  string authorization_id = 1;
+  int64 amount_cents = 2;
+}
+
+message CaptureResponse {
+  string capture_id = 1;
+  string status = 2;
+}
+
+message RefundRequest {
+  string capture_id = 1;
+  int64 amount_cents = 2;
+  string reason = 3;
+}
+
+message RefundResponse {
+  string refund_id = 1;
+  string status = 2;
+}
+
+// Inventory is the warehouse stock service.
+service Inventory {
+  rpc Get(GetStockRequest) returns (Stock);
+  rpc Reserve(ReserveRequest) returns (ReserveResponse);
+  rpc Release(ReleaseRequest) returns (ReleaseResponse);
+}
+
+message GetStockRequest {
+  string sku = 1;
+  string warehouse = 2;
+}
+
+message Stock {
+  string sku = 1;
+  int32 available = 2;
+  int32 reserved = 3;
+  string warehouse = 4;
+}
+
+message ReserveLine {
+  string sku = 1;
+  int32 quantity = 2;
+}
+
+message ReserveRequest {
+  string reservation_id = 1;
+  repeated ReserveLine lines = 2;
+}
+
+message ReserveResponse {
+  string reservation_id = 1;
+  string status = 2; // reserved | partial | unavailable
+  repeated ReserveLine short = 3;
+}
+
+message ReleaseRequest {
+  string reservation_id = 1;
+}
+
+message ReleaseResponse {
+  string status = 1;
+}

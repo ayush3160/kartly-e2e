@@ -1,0 +1,167 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: catalog, namespace: kartly, labels: { app: catalog } }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: catalog } }
+  template:
+    metadata: { labels: { app: catalog } }
+    spec:
+      containers:
+        - name: catalog
+          image: kartly/stubs:main
+          imagePullPolicy: IfNotPresent
+          args: ["-svc", "catalog", "-addr", ":9101"]
+          ports: [{ containerPort: 9101 }]
+          env: []
+---
+apiVersion: v1
+kind: Service
+metadata: { name: catalog, namespace: kartly }
+spec:
+  selector: { app: catalog }
+  ports: [{ port: 9101, targetPort: 9101 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: pricing, namespace: kartly, labels: { app: pricing } }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: pricing } }
+  template:
+    metadata: { labels: { app: pricing } }
+    spec:
+      containers:
+        - name: pricing
+          image: kartly/stubs:main
+          imagePullPolicy: IfNotPresent
+          args: ["-svc", "pricing", "-addr", ":9102"]
+          ports: [{ containerPort: 9102 }]
+          env: []
+---
+apiVersion: v1
+kind: Service
+metadata: { name: pricing, namespace: kartly }
+spec:
+  selector: { app: pricing }
+  ports: [{ port: 9102, targetPort: 9102 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: auth, namespace: kartly, labels: { app: auth } }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: auth } }
+  template:
+    metadata: { labels: { app: auth } }
+    spec:
+      containers:
+        - name: auth
+          image: kartly/stubs:main
+          imagePullPolicy: IfNotPresent
+          args: ["-svc", "auth", "-addr", ":9103"]
+          ports: [{ containerPort: 9103 }]
+          env: []
+---
+apiVersion: v1
+kind: Service
+metadata: { name: auth, namespace: kartly }
+spec:
+  selector: { app: auth }
+  ports: [{ port: 9103, targetPort: 9103 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: flags, namespace: kartly, labels: { app: flags } }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: flags } }
+  template:
+    metadata: { labels: { app: flags } }
+    spec:
+      containers:
+        - name: flags
+          image: kartly/stubs:main
+          imagePullPolicy: IfNotPresent
+          args: ["-svc", "flags", "-addr", ":9104"]
+          ports: [{ containerPort: 9104 }]
+          env: []
+---
+apiVersion: v1
+kind: Service
+metadata: { name: flags, namespace: kartly }
+spec:
+  selector: { app: flags }
+  ports: [{ port: 9104, targetPort: 9104 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: shipping, namespace: kartly, labels: { app: shipping } }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: shipping } }
+  template:
+    metadata: { labels: { app: shipping } }
+    spec:
+      containers:
+        - name: shipping
+          image: kartly/stubs:main
+          imagePullPolicy: IfNotPresent
+          args: ["-svc", "shipping", "-addr", ":9105"]
+          ports: [{ containerPort: 9105 }]
+          env: []
+---
+apiVersion: v1
+kind: Service
+metadata: { name: shipping, namespace: kartly }
+spec:
+  selector: { app: shipping }
+  ports: [{ port: 9105, targetPort: 9105 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: payments, namespace: kartly, labels: { app: payments } }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: payments } }
+  template:
+    metadata: { labels: { app: payments } }
+    spec:
+      containers:
+        - name: payments
+          image: kartly/stubs:main
+          imagePullPolicy: IfNotPresent
+          args: ["-svc", "payments", "-addr", ":9201"]
+          ports: [{ containerPort: 9201 }]
+          env: []
+---
+apiVersion: v1
+kind: Service
+metadata: { name: payments, namespace: kartly }
+spec:
+  selector: { app: payments }
+  ports: [{ port: 9201, targetPort: 9201 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: inventory, namespace: kartly, labels: { app: inventory } }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: inventory } }
+  template:
+    metadata: { labels: { app: inventory } }
+    spec:
+      containers:
+        - name: inventory
+          image: kartly/stubs:main
+          imagePullPolicy: IfNotPresent
+          args: ["-svc", "inventory", "-addr", ":9202"]
+          ports: [{ containerPort: 9202 }]
+          env: []
+---
+apiVersion: v1
+kind: Service
+metadata: { name: inventory, namespace: kartly }
+spec:
+  selector: { app: inventory }
+  ports: [{ port: 9202, targetPort: 9202 }]

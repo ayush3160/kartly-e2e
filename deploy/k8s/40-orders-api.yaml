@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: orders-api, namespace: kartly, labels: { app: orders-api } }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: orders-api } }
+  template:
+    metadata: { labels: { app: orders-api } }
+    spec:
+      containers:
+        - name: orders-api
+          image: kartly/orders-api:main
+          imagePullPolicy: IfNotPresent
+          ports: [{ containerPort: 8080 }]
+          env:
+            - { name: POSTGRES_DSN, value: "postgres://kartly:kartly@postgres:5432/kartly?sslmode=disable" }
+            - { name: MYSQL_DSN, value: "kartly:kartly@tcp(mysql:3306)/accounts?parseTime=true" }
+            - { name: MONGO_URI, value: "mongodb://mongo:27017" }
+            - { name: REDIS_ADDR, value: "redis:6379" }
+            - { name: KAFKA_BROKERS, value: "kafka:9092" }
+            - { name: CATALOG_URL, value: "http://catalog:9101" }
+            - { name: PRICING_URL, value: "http://pricing:9102" }
+            - { name: AUTH_URL, value: "http://auth:9103" }
+            - { name: FLAGS_URL, value: "http://flags:9104" }
+            - { name: SHIPPING_URL, value: "http://shipping:9105" }
+            - { name: PAYMENTS_GRPC, value: "payments:9201" }
+            - { name: INVENTORY_GRPC, value: "inventory:9202" }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: orders-api, namespace: kartly }
+spec:
+  selector: { app: orders-api }
+  ports: [{ port: 8080, targetPort: 8080 }]
