@@ -1,3 +1,4 @@
 /keploy/
 /bin/
 *.log
+keploy.yml
