@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"strconv"
 
 	"github.com/ayush3160/kartly-e2e/internal/domain"
@@ -23,7 +22,7 @@ func NewAccounts(dsn string) (*Accounts, error) {
 	return &Accounts{db: db}, nil
 }
 
-// Account returns a customer and their addresses.
+// Account returns a customer and their addresses, in one round trip.
 func (a *Accounts) Account(ctx context.Context, id string) (domain.Account, error) {
 	var acc domain.Account
 	n, err := strconv.ParseInt(id[2:], 10, 64) // ids look like "u-101"
@@ -31,31 +30,40 @@ func (a *Accounts) Account(ctx context.Context, id string) (domain.Account, erro
 		return acc, ErrNotFound
 	}
 	// The legacy schema keys by number; queries are inlined like the old monolith's.
-	err = a.db.QueryRowContext(ctx,
-		"SELECT id, email, full_name, tier FROM accounts WHERE id = "+strconv.FormatInt(n, 10)).
-		Scan(&n, &acc.Email, &acc.Name, &acc.Tier)
-	if errors.Is(err, sql.ErrNoRows) {
-		return acc, ErrNotFound
-	}
-	if err != nil {
-		return acc, err
-	}
-	acc.ID = id
 	rows, err := a.db.QueryContext(ctx,
-		"SELECT id, line1, city, pincode, is_default FROM addresses WHERE account_id = "+strconv.FormatInt(n, 10)+" ORDER BY id")
+		"SELECT a.email, a.full_name, a.tier, d.id, d.line1, d.city, d.pincode, d.is_default"+
+			" FROM accounts a LEFT JOIN addresses d ON d.account_id = a.id AND d.is_default = 1"+
+			" WHERE a.id = "+strconv.FormatInt(n, 10)+" ORDER BY d.id")
 	if err != nil {
 		return acc, err
 	}
 	defer rows.Close()
 	acc.Addresses = []domain.Address{}
+	found := false
 	for rows.Next() {
-		var ad domain.Address
-		if err := rows.Scan(&ad.ID, &ad.Line1, &ad.City, &ad.Pincode, &ad.Default); err != nil {
+		var (
+			adID                 sql.NullInt64
+			line1, city, pincode sql.NullString
+			isDefault            sql.NullBool
+		)
+		if err := rows.Scan(&acc.Email, &acc.Name, &acc.Tier, &adID, &line1, &city, &pincode, &isDefault); err != nil {
 			return acc, err
 		}
-		acc.Addresses = append(acc.Addresses, ad)
+		found = true
+		if adID.Valid {
+			acc.Addresses = append(acc.Addresses, domain.Address{
+				ID: adID.Int64, Line1: line1.String, City: city.String, Pincode: pincode.String, Default: isDefault.Bool,
+			})
+		}
 	}
-	return acc, rows.Err()
+	if err := rows.Err(); err != nil {
+		return acc, err
+	}
+	if !found {
+		return acc, ErrNotFound
+	}
+	acc.ID = id
+	return acc, nil
 }
 
 // SetDefaultAddress updates a customer's address and makes it the default.

@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+	"math"
 
 	"github.com/ayush3160/kartly-e2e/internal/domain"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -92,7 +93,8 @@ func (d *Docs) ProductRating(ctx context.Context, productID string) (Rating, err
 	if err := cur.All(ctx, &rows); err != nil || len(rows) == 0 {
 		return Rating{}, err
 	}
-	return Rating{Average: float64(int(rows[0].Avg*10)) / 10, Count: rows[0].N}, nil
+	// The storefront draws ratings as stars, so round to the nearest half.
+	return Rating{Average: math.Round(rows[0].Avg*2) / 2, Count: rows[0].N}, nil
 }
 
 // Close disconnects.

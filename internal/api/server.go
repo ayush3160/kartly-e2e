@@ -64,6 +64,7 @@ func (s *Server) Routes() http.Handler {
 	// orders
 	mux.HandleFunc("GET /orders", s.authed(s.listOrders))
 	mux.HandleFunc("GET /orders/{id}", s.authed(s.getOrder))
+	mux.HandleFunc("GET /orders/{id}/notes", s.authed(s.getOrderNotes))
 	mux.HandleFunc("POST /orders/{id}/cancel", s.authed(s.cancelOrder))
 
 	// returns
