@@ -12,13 +12,22 @@ import (
 
 const productTTL = 10 * time.Minute
 
+// storefront is where product share links point.
+const storefront = "https://kartly.in"
+
+// withURL fills in a product's share link.
+func withURL(p domain.Product) domain.Product {
+	p.URL = storefront + "/p/" + p.ID
+	return p
+}
+
 // product reads a product through the Redis cache.
 func (s *Server) product(ctx context.Context, id string) (domain.Product, error) {
 	key := "product:" + s.Region + ":" + id
 	if v, ok, err := s.Cache.Get(ctx, key); err == nil && ok {
 		var p domain.Product
 		if json.Unmarshal([]byte(v), &p) == nil {
-			return p, nil
+			return withURL(p), nil
 		}
 	}
 	p, err := s.Catalog.Product(ctx, id, s.Region)
@@ -27,7 +36,7 @@ func (s *Server) product(ctx context.Context, id string) (domain.Product, error)
 	}
 	b, _ := json.Marshal(p)
 	_ = s.Cache.Set(ctx, key, string(b), productTTL)
-	return p, nil
+	return withURL(p), nil
 }
 
 func (s *Server) listProducts(w http.ResponseWriter, r *http.Request) {
@@ -41,6 +50,9 @@ func (s *Server) listProducts(w http.ResponseWriter, r *http.Request) {
 	}
 	if res.Items == nil {
 		res.Items = []domain.Product{}
+	}
+	for i := range res.Items {
+		res.Items[i] = withURL(res.Items[i])
 	}
 	writeJSON(w, http.StatusOK, res)
 }
