@@ -44,13 +44,16 @@ the agent reads intent or only the diff.
 
 Run `ed0c6d9a-9eb8-4b8a-94b5-579ce6bd25c6`: 10 of 118 tests fail in five groups.
 
-| Group | Type | Tests | Endpoints | Cause | Verdict |
-|---|---|---|---|---|---|
-| MySQL `SELECT accounts` changed: `+ table addresses, ~ columns, ~ order` | CALL_CHANGED | 2 | GET /me, PUT /me/address | perf-account-one-query drops non-default addresses | regression |
-| `Mongo find order_notes` no longer made | CALL_REMOVED | 2 | GET /orders/{id} | feat-order-notes-api-split (KART-430) | intended |
-| `Redis del idem:checkout:{id}:{id}` no longer made | CALL_REMOVED | 1 | POST /checkout | refactor-coupon-errors: the coupon error path no longer releases the key | regression |
-| `200 → 200 \| ~ average` | RESPONSE_CHANGED | 4 | GET /products/{id} | feat-half-star-ratings (KART-448) | intended |
-| `422 → 500 \| ~ error, ~ message` | RESPONSE_CHANGED | 1 | POST /checkout/quote | refactor-coupon-errors | regression |
+| Group | Type | Tests | Endpoints | Observed | Cause | Verdict |
+|---|---|---|---|---|---|---|
+| G1 | CALL_CHANGED | 2 | GET /me, PUT /me/address | MySQL sent `SELECT … FROM accounts a LEFT JOIN addresses d ON … AND d.is_default = 1 …`; closest recorded `SELECT id, email, full_name, tier FROM accounts WHERE id = 101`; 200 → 500 | perf-account-one-query drops non-default addresses | regression |
+| G2 | CALL_REMOVED | 2 | GET /orders/{id} | recorded, not made: Mongo `{"find":"order_notes",…}`; `$.notes[]` removed | feat-order-notes-api-split (KART-430) | intended |
+| G3 | CALL_REMOVED | 1 | POST /checkout | recorded, not made: Redis `del idem:checkout:u-101:…`; 422 → 500, `$.error: "coupon_expired" → "internal"` | refactor-coupon-errors: the coupon error path no longer releases the key | regression |
+| G4 | RESPONSE_CHANGED | 4 | GET /products/{id} | `$.rating.average: 4.3 → 4.5` | feat-half-star-ratings (KART-448) | intended |
+| G5 | RESPONSE_CHANGED | 1 | POST /checkout/quote | 422 → 500, `$.error: "coupon_expired" → "internal"` | refactor-coupon-errors | regression |
+
+Triage states only what it observed; the agent has to find the cause in
+`git diff origin/main...HEAD`.
 
 The agent should connect the last group and the Redis group to one commit,
 and should not read the account query as intended just because its commit
