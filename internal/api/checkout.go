@@ -21,6 +21,8 @@ type checkoutReq struct {
 }
 
 // errCoupon is a coupon the customer cannot use, with the reason to show.
+// It is returned by pointer, like the store's errors, so callers can add
+// context with fmt.Errorf("%w") without copying it.
 type errCoupon struct{ code, msg string }
 
 func (e errCoupon) Error() string { return e.msg }
@@ -33,13 +35,13 @@ func (s *Server) priceCart(ctx context.Context, p clients.Principal, c domain.Ca
 	if code != "" {
 		cp, err := s.Orders.CouponByCode(ctx, code)
 		if errors.Is(err, store.ErrNotFound) {
-			return domain.Quote{}, errCoupon{"invalid_coupon", "coupon " + code + " does not exist"}
+			return domain.Quote{}, &errCoupon{"invalid_coupon", "coupon " + code + " does not exist"}
 		}
 		if err != nil {
 			return domain.Quote{}, err
 		}
 		if !cp.Active {
-			return domain.Quote{}, errCoupon{"coupon_expired", "coupon " + code + " has expired"}
+			return domain.Quote{}, &errCoupon{"coupon_expired", "coupon " + code + " has expired"}
 		}
 		req.Coupon = &clients.CouponRef{Code: cp.Code, Kind: cp.Kind, Value: cp.Value}
 	}
