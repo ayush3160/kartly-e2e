@@ -33,6 +33,28 @@ the agent reads intent or only the diff.
 | `e2e/chore-config-cleanup` | A removed env var crashes the app at boot | APP_NO_RESPONSE | regression |
 | `e2e/chore-logging-only` | Log lines only | no failures | control |
 | `e2e/release-sprint-42` | gift wrap + session cache + timezone | three groups | mixed |
+| `e2e/feat-half-star-ratings` | Ratings rounded to the nearest half star (ticket, API changelog) | RESPONSE_CHANGED (`~ average`) | intended |
+| `e2e/refactor-coupon-errors` | "No behaviour change" refactor returns coupon errors by pointer, so `errors.As` misses them: 422 becomes 500 and checkout keeps its idempotency key | RESPONSE_CHANGED (422 → 500) + CALL_REMOVED (Redis `del`) | regression |
+| `e2e/perf-account-one-query` | "One query" for the account joins only the default address | CALL_CHANGED (MySQL, `+ table addresses`) | regression |
+| `e2e/feat-product-share-links` | Products gain a `url` field (additive) | no failures: Keploy accepts added fields | control |
+| `e2e/release-sprint-43` | order notes split + share links + coupon errors + account query | four groups (the additive change never fails) | mixed |
+| `e2e/release-sprint-44` | order notes split + half-star ratings + coupon errors + account query | five groups: two intended, three regressions (two from one bug) | mixed |
+
+### `e2e/release-sprint-44`, the mixed release
+
+Run `ed0c6d9a-9eb8-4b8a-94b5-579ce6bd25c6`: 10 of 118 tests fail in five groups.
+
+| Group | Type | Tests | Endpoints | Cause | Verdict |
+|---|---|---|---|---|---|
+| MySQL `SELECT accounts` changed: `+ table addresses, ~ columns, ~ order` | CALL_CHANGED | 2 | GET /me, PUT /me/address | perf-account-one-query drops non-default addresses | regression |
+| `Mongo find order_notes` no longer made | CALL_REMOVED | 2 | GET /orders/{id} | feat-order-notes-api-split (KART-430) | intended |
+| `Redis del idem:checkout:{id}:{id}` no longer made | CALL_REMOVED | 1 | POST /checkout | refactor-coupon-errors: the coupon error path no longer releases the key | regression |
+| `200 → 200 \| ~ average` | RESPONSE_CHANGED | 4 | GET /products/{id} | feat-half-star-ratings (KART-448) | intended |
+| `422 → 500 \| ~ error, ~ message` | RESPONSE_CHANGED | 1 | POST /checkout/quote | refactor-coupon-errors | regression |
+
+The agent should connect the last group and the Redis group to one commit,
+and should not read the account query as intended just because its commit
+says "perf": a performance change must not change the response.
 
 ## Scoring a run
 
