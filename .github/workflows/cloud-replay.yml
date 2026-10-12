@@ -16,7 +16,9 @@ concurrency:
 
 jobs:
   replay:
-    runs-on: ubuntu-latest
+    # vars.KEPLOY_RUNNER picks a self-hosted runner (e.g. one next to a
+    # staging setup); GitHub's own runner otherwise.
+    runs-on: ${{ vars.KEPLOY_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 30
     env:
       KEPLOY_API_KEY: ${{ secrets.KEPLOY_API_KEY }}
@@ -32,17 +34,27 @@ jobs:
         run: docker build --target orders-api -t "$IMAGE" .
 
       - name: Install the Keploy CLI
+        # vars.KEPLOY_BIN uses a CLI already on the runner (e.g. a staging
+        # build); the released CLI is installed otherwise.
+        env:
+          KEPLOY_BIN: ${{ vars.KEPLOY_BIN }}
         run: |
-          curl --silent -O -L https://keploy.io/ent/install.sh
-          source install.sh
-          keploy --version
+          if [ -n "$KEPLOY_BIN" ]; then
+            echo "KEPLOY=$KEPLOY_BIN" >> "$GITHUB_ENV"
+            "$KEPLOY_BIN" --version
+          else
+            curl --silent -O -L https://keploy.io/ent/install.sh
+            source install.sh
+            echo "KEPLOY=keploy" >> "$GITHUB_ENV"
+            keploy --version
+          fi
 
       - name: keploy cloud replay
         shell: bash # -eo pipefail: the replay's exit code survives tee
         # --disableReportUpload=false: cloud replay writes a keploy.yml that
         # turns report upload off, and without the uploaded run there is no
         # run id for `keploy cloud triage`.
-        run: keploy cloud replay --app "$APP" --cluster "$CLUSTER" --image "$IMAGE" --disableReportUpload=false 2>&1 | tee replay.log
+        run: $KEPLOY cloud replay --app "$APP" --cluster "$CLUSTER" --image "$IMAGE" --disableReportUpload=false 2>&1 | tee replay.log
 
       - name: Upload the replay log
         if: always()
@@ -50,3 +62,9 @@ jobs:
         with:
           name: replay-log
           path: replay.log
+
+      - name: Give the workspace back to the runner user
+        # The replay runs under sudo and leaves root-owned files; a
+        # self-hosted runner's next checkout could not clean them.
+        if: always()
+        run: sudo chown -R "$(id -u):$(id -g)" "$GITHUB_WORKSPACE" || true
