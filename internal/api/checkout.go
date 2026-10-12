@@ -69,7 +69,7 @@ func (s *Server) quote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	q, err := s.priceCart(ctx, p, c, req.Coupon)
-	var ce errCoupon
+	var ce *errCoupon
 	if errors.As(err, &ce) {
 		writeError(w, http.StatusUnprocessableEntity, ce.code, ce.msg)
 		return
@@ -138,7 +138,7 @@ func (s *Server) checkout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	q, err := s.priceCart(ctx, p, c, req.Coupon)
-	var ce errCoupon
+	var ce *errCoupon
 	if errors.As(err, &ce) {
 		_ = s.Cache.Del(ctx, "idem:checkout:"+p.UserID+":"+idem)
 		writeError(w, http.StatusUnprocessableEntity, ce.code, ce.msg)
