@@ -15,6 +15,8 @@ type Product struct {
 	Category string `json:"category"`
 	Price    Money  `json:"price"`
 	InStock  bool   `json:"inStock"`
+	// URL is the product's share link on the storefront.
+	URL string `json:"url"`
 }
 
 // CartItem is one line in a cart.
