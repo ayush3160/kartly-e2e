@@ -39,7 +39,10 @@ jobs:
 
       - name: keploy cloud replay
         shell: bash # -eo pipefail: the replay's exit code survives tee
-        run: keploy cloud replay --app "$APP" --cluster "$CLUSTER" --image "$IMAGE" 2>&1 | tee replay.log
+        # --disableReportUpload=false: cloud replay writes a keploy.yml that
+        # turns report upload off, and without the uploaded run there is no
+        # run id for `keploy cloud triage`.
+        run: keploy cloud replay --app "$APP" --cluster "$CLUSTER" --image "$IMAGE" --disableReportUpload=false 2>&1 | tee replay.log
 
       - name: Upload the replay log
         if: always()
