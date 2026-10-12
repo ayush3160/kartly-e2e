@@ -54,12 +54,6 @@ When the replay fails, start a fresh coding-agent session on the branch and
 give it only the `keploy cloud triage --app kartly.orders-api --run <id>`
 command the job prints.
 
-## Scenario branches
-
-Each `e2e/*` branch is one pull request against `main`. See
-[docs/scenarios.md](docs/scenarios.md) for what each changes, the group the
-triage should produce, and the verdict a reviewer would give.
-
 ## Local run
 
 ```
