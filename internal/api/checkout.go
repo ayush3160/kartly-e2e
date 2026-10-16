@@ -84,6 +84,11 @@ func (s *Server) quote(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"quote": q, "shippingOptions": rates})
 }
 
+// chargeFor is what the customer pays for a quote.
+func chargeFor(q domain.Quote) domain.Money {
+	return domain.Money{Amount: q.Total.Amount - q.Discount.Amount, Currency: q.Total.Currency}
+}
+
 // orderID is derived from the idempotency key, so a retried checkout lands
 // on the same order.
 func orderID(key string) string {
@@ -167,8 +172,9 @@ func (s *Server) checkout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	charge := chargeFor(q)
 	auth, err := s.GRPC.Payments.Authorize(ctx, &kartlyv1.AuthorizeRequest{
-		OrderId: id, CustomerId: p.UserID, AmountCents: q.Total.Amount, Currency: q.Total.Currency,
+		OrderId: id, CustomerId: p.UserID, AmountCents: q.Total.Amount, Currency: charge.Currency,
 		CardToken: req.CardToken, IdempotencyKey: idem,
 	})
 	if err != nil {
@@ -185,7 +191,7 @@ func (s *Server) checkout(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, code, map[string]any{"error": "payment_" + auth.GetStatus(), "declineCode": auth.GetDeclineCode()})
 		return
 	}
-	capture, err := s.GRPC.Payments.Capture(ctx, &kartlyv1.CaptureRequest{AuthorizationId: auth.GetAuthorizationId(), AmountCents: q.Total.Amount})
+	capture, err := s.GRPC.Payments.Capture(ctx, &kartlyv1.CaptureRequest{AuthorizationId: auth.GetAuthorizationId(), AmountCents: charge.Amount})
 	if err != nil {
 		s.fail(w, r, err)
 		return
