@@ -51,7 +51,8 @@ func (s *Server) webhook(w http.ResponseWriter, r *http.Request, provider, signa
 	}
 	t, ok := transitions[ev.Type]
 	if !ok {
-		writeJSON(w, http.StatusOK, map[string]any{"ignored": true, "reason": "unhandled event type"})
+		// Acknowledged so the provider stops retrying, but nothing was applied.
+		writeJSON(w, http.StatusAccepted, map[string]any{"ignored": true, "reason": "unhandled event type"})
 		return
 	}
 	ctx := r.Context()
