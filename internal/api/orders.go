@@ -5,14 +5,17 @@ import (
 	"slices"
 
 	kartlyv1 "github.com/ayush3160/kartly-e2e/gen/kartlyv1"
+	"github.com/ayush3160/kartly-e2e/internal/domain"
 	"github.com/ayush3160/kartly-e2e/internal/store"
 )
 
-var orderStatuses = []string{"", "placed", "paid", "shipped", "delivered", "cancelled", "payment_failed"}
+var orderStatuses = []string{"placed", "paid", "shipped", "delivered", "cancelled", "payment_failed", "refunded"}
+
+func validStatus(status string) bool { return status == "" || slices.Contains(orderStatuses, status) }
 
 func (s *Server) listOrders(w http.ResponseWriter, r *http.Request) {
 	status := r.URL.Query().Get("status")
-	if !slices.Contains(orderStatuses, status) {
+	if !validStatus(status) {
 		writeError(w, http.StatusBadRequest, "invalid_status", "unknown status "+status)
 		return
 	}
@@ -56,8 +59,17 @@ func (s *Server) getOrder(w http.ResponseWriter, r *http.Request) {
 	if len(notes) > 0 && slices.Contains(perms.Allowed, "read_notes") {
 		ord.Notes = notes
 	}
-	writeJSON(w, http.StatusOK, ord)
+	writeJSON(w, http.StatusOK, orderView{Order: ord, CanCancel: cancellable(ord.Status)})
 }
+
+type orderView struct {
+	domain.Order
+	CanCancel bool `json:"canCancel"`
+}
+
+var cancellableStatuses = []string{"placed", "paid"}
+
+func cancellable(status string) bool { return slices.Contains(cancellableStatuses, status) }
 
 func (s *Server) cancelOrder(w http.ResponseWriter, r *http.Request) {
 	p := principal(r)
@@ -72,7 +84,7 @@ func (s *Server) cancelOrder(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusForbidden, "forbidden", "this order belongs to another customer")
 		return
 	}
-	ok, err := s.Orders.SetStatus(ctx, p.Tenant, id, "cancelled", "placed", "paid")
+	ok, err := s.Orders.SetStatus(ctx, p.Tenant, id, "cancelled", cancellableStatuses...)
 	if err != nil {
 		s.fail(w, r, err)
 		return

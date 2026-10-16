@@ -1,14 +1,16 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
+	"time"
 
 	kartlyv1 "github.com/ayush3160/kartly-e2e/gen/kartlyv1"
 	"github.com/ayush3160/kartly-e2e/internal/clients"
 	"github.com/ayush3160/kartly-e2e/internal/domain"
 )
 
-const returnWindowDays = 30
+const returnWindow = 30 * 24 * time.Hour
 
 type returnReq struct {
 	OrderID string   `json:"orderId"`
@@ -43,8 +45,9 @@ func (s *Server) createReturn(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, r, err)
 		return
 	}
-	if days > returnWindowDays {
-		writeError(w, http.StatusUnprocessableEntity, "return_window_closed", "returns are accepted within 30 days of delivery")
+	if time.Duration(days)*24*time.Hour > returnWindow {
+		writeError(w, http.StatusUnprocessableEntity, "return_window_closed",
+			fmt.Sprintf("returns are accepted within %d days of delivery", int(returnWindow.Hours()/24)))
 		return
 	}
 	refund := domain.Money{Currency: ord.Total.Currency}
@@ -89,7 +92,7 @@ func (s *Server) createReturn(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, ret)
+	writeJSON(w, http.StatusCreated, viewReturn(ret))
 }
 
 func (s *Server) getReturn(w http.ResponseWriter, r *http.Request) {
@@ -98,7 +101,41 @@ func (s *Server) getReturn(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, ret)
+	writeJSON(w, http.StatusOK, viewReturn(ret))
+}
+
+type returnView struct {
+	domain.Return
+	RefundDisplay string `json:"refundDisplay"`
+}
+
+const trackingBase = "https://track.shipfast.example/t/"
+
+func viewReturn(r domain.Return) returnView {
+	if r.Label != "" {
+		r.Label = trackingBase + r.Label
+	}
+	return returnView{Return: r, RefundDisplay: formatMoney(r.Refund)}
+}
+
+var currencySymbols = map[string]string{"INR": "₹", "USD": "$"}
+
+// formatMoney renders an amount for people: ₹2,499.00, $39.99.
+func formatMoney(m domain.Money) string {
+	sym, ok := currencySymbols[m.Currency]
+	if !ok {
+		sym = m.Currency + " "
+	}
+	sign := ""
+	amt := m.Amount
+	if amt < 0 {
+		sign, amt = "-", -amt
+	}
+	whole := fmt.Sprintf("%d", amt/100)
+	for i := len(whole) - 3; i > 0; i -= 3 {
+		whole = whole[:i] + "," + whole[i:]
+	}
+	return fmt.Sprintf("%s%s%s.%02d", sign, sym, whole, amt%100)
 }
 
 func contains(list []string, v string) bool {

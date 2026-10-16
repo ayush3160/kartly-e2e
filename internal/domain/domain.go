@@ -7,6 +7,12 @@ type Money struct {
 	Currency string `json:"currency"`
 }
 
+// Add returns m plus o; o is taken to be in m's currency.
+func (m Money) Add(o Money) Money {
+	m.Amount += o.Amount
+	return m
+}
+
 // Product is a catalog item as the storefront shows it.
 type Product struct {
 	ID       string `json:"id"`

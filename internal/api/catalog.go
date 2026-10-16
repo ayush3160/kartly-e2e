@@ -72,6 +72,19 @@ func (s *Server) getStock(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"sku": st.GetSku(), "available": st.GetAvailable(), "warehouse": st.GetWarehouse(),
-		"lowStock": st.GetAvailable() > 0 && st.GetAvailable() < 5,
+		"status": stockStatus(st.GetAvailable()),
 	})
+}
+
+const lowStockBelow = 5
+
+// stockStatus is the label the storefront shows next to the buy button.
+func stockStatus(available int32) string {
+	switch {
+	case available <= 0:
+		return "out_of_stock"
+	case available < lowStockBelow:
+		return "few_left"
+	}
+	return "in_stock"
 }
