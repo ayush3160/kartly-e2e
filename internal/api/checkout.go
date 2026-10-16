@@ -63,7 +63,7 @@ func (s *Server) quote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(c.Items) == 0 {
-		writeError(w, http.StatusUnprocessableEntity, "empty_cart", "add something to the cart first")
+		writeError(w, http.StatusUnprocessableEntity, "empty_cart", "your cart is empty")
 		return
 	}
 	q, err := s.priceCart(ctx, p, c, req.Coupon)
@@ -132,7 +132,7 @@ func (s *Server) checkout(w http.ResponseWriter, r *http.Request) {
 	}
 	if len(c.Items) == 0 {
 		_ = s.Cache.Del(ctx, "idem:checkout:"+p.UserID+":"+idem)
-		writeError(w, http.StatusUnprocessableEntity, "empty_cart", "add something to the cart first")
+		writeError(w, http.StatusUnprocessableEntity, "empty_cart", "your cart is empty")
 		return
 	}
 	q, err := s.priceCart(ctx, p, c, req.Coupon)
