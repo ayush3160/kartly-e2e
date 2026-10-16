@@ -72,8 +72,7 @@ func (s *Server) getStock(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"sku": st.GetSku(), "available": st.GetAvailable(), "warehouse": st.GetWarehouse(),
-		"lowStock": st.GetAvailable() > 0 && st.GetAvailable() < lowStockBelow,
-		"status":   stockStatus(st.GetAvailable()),
+		"status": stockStatus(st.GetAvailable()),
 	})
 }
 
