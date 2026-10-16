@@ -198,7 +198,7 @@ func (s *Server) checkout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ord := domain.Order{
-		ID: id, CustomerID: p.UserID, Status: "paid", Total: q.Total, Coupon: q.Coupon,
+		ID: id, CustomerID: p.UserID, Status: "paid", Total: charge, Coupon: q.Coupon,
 		ShippingFee: q.Shipping, Items: make([]domain.OrderItem, 0, len(c.Items)),
 	}
 	for _, it := range c.Items {

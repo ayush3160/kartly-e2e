@@ -109,7 +109,12 @@ type returnView struct {
 	RefundDisplay string `json:"refundDisplay"`
 }
 
+const trackingBase = "https://track.shipfast.example/t/"
+
 func viewReturn(r domain.Return) returnView {
+	if r.Label != "" {
+		r.Label = trackingBase + r.Label
+	}
 	return returnView{Return: r, RefundDisplay: formatMoney(r.Refund)}
 }
 
