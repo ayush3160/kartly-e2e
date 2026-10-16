@@ -45,7 +45,7 @@ func (s *Server) createReturn(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, r, err)
 		return
 	}
-	if time.Duration(days)*time.Hour > returnWindow {
+	if time.Duration(days)*24*time.Hour > returnWindow {
 		writeError(w, http.StatusUnprocessableEntity, "return_window_closed",
 			fmt.Sprintf("returns are accepted within %d days of delivery", int(returnWindow.Hours()/24)))
 		return

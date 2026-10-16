@@ -11,7 +11,7 @@ import (
 
 var orderStatuses = []string{"placed", "paid", "shipped", "delivered", "cancelled", "payment_failed", "refunded"}
 
-func validStatus(status string) bool { return slices.Contains(orderStatuses, status) }
+func validStatus(status string) bool { return status == "" || slices.Contains(orderStatuses, status) }
 
 func (s *Server) listOrders(w http.ResponseWriter, r *http.Request) {
 	status := r.URL.Query().Get("status")

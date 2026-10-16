@@ -203,7 +203,7 @@ func withTotals(c domain.Cart) cartView {
 	v := cartView{Cart: c, Subtotal: domain.Money{Currency: c.Currency}}
 	for _, it := range c.Items {
 		v.ItemCount += it.Quantity
-		v.Subtotal = v.Subtotal.Add(it.UnitPrice)
+		v.Subtotal.Amount += int64(it.Quantity) * it.UnitPrice.Amount
 	}
 	return v
 }
