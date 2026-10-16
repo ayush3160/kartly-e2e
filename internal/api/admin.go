@@ -2,7 +2,6 @@ package api
 
 import (
 	"net/http"
-	"slices"
 
 	"github.com/ayush3160/kartly-e2e/internal/store"
 )
@@ -15,7 +14,7 @@ var adminTransitions = map[string][]string{
 
 func (s *Server) adminListOrders(w http.ResponseWriter, r *http.Request) {
 	status := r.URL.Query().Get("status")
-	if !slices.Contains(orderStatuses, status) {
+	if !validStatus(status) {
 		writeError(w, http.StatusBadRequest, "invalid_status", "unknown status "+status)
 		return
 	}
